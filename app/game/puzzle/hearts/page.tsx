@@ -1,3 +1,4 @@
+'use client';
 import React, { useState, useEffect } from 'react';
 import PuzzleHeader from '../../../components/puzzleheader/page';
 import puzzleConfig from '../../../types/puzzle'
