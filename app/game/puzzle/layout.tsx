@@ -12,7 +12,9 @@ function PuzzleScreen({ puzzleId }: { puzzleId: number }) {
   
   return (
     <div className="min-h-screen">
-      <PuzzleComponent puzzleId={puzzleId} />
+      <PuzzleComponent puzzleId={puzzleId} onComplete={function (): void {
+        throw new Error('Function not implemented.');
+      } } />
     </div>
   );
 }

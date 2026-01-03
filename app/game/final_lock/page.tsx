@@ -1,95 +1,89 @@
-import React from "react";
-import { useGame } from "../page";
-import Image from "next/image";
+'use client';
+import React, { useState } from 'react';
 
-const friendImages: Record<number, string> = {
-  1: "/savedfriend1.png",
-  2: "/savedfriend2.png",
-  3: "/savedfriend3.png",
-};
+interface FinalLockScreenProps {
+  expectedCode: string[];
+  hints: string[];
+  onComplete: () => void;
+}
 
+function FinalLockScreen({
+  expectedCode,
+  hints,
+  onComplete,
+}: FinalLockScreenProps) {
+  const [input, setInput] = useState<string[]>(
+    Array(expectedCode.length).fill('')
+  );
+  const [error, setError] = useState(false);
 
-const CORRECT_FINAL_CODE = ["P", "L", "R"]; 
-
-function FinalLockScreen() {
-  const { gameState, setGameState } = useGame();
-
-  const updateFinalCode = (index: number, value: string) => {
-    setGameState((prev) => {
-      const newCode = [...prev.finalCode];
-      newCode[index] = value.toUpperCase().slice(0, 1);
-      return { ...prev, finalCode: newCode };
-    });
+  const updateChar = (index: number, value: string) => {
+    const updated = [...input];
+    updated[index] = value.toUpperCase().slice(0, 1);
+    setInput(updated);
   };
-  const handleSubmit = () => {
-    const enteredCode = gameState.finalCode.map((c) => c.toUpperCase());
-    const isCorrect = enteredCode.every(
-      (c, index) => c === CORRECT_FINAL_CODE[index]
+
+  const submit = () => {
+    const correct = input.every(
+      (char, i) => char === expectedCode[i]
     );
 
-    if (isCorrect) {
-      setGameState((prev) => ({ ...prev, gameCompleted: true }));
+    if (correct) {
+      setTimeout(onComplete, 800);
     } else {
-      alert("❌ Incorrect code. Try again!");
+      setError(true);
+      setTimeout(() => setError(false), 500);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-900">
-      <h2 className="text-4xl font-bold text-white mb-8">Final Lock</h2>
-      <p className="text-xl text-gray-300 mb-12 text-center max-w-2xl">
-        Use the hints from your freed friends to unlock the final lock!
-      </p>
-      <div className="space-y-8 mb-12">
-        {gameState.friends
-          .filter((f) => f.freed)
-          .map((friend) => (
-            <div
-              key={friend.id}
-              className="bg-gray-800 p-6 rounded-lg text-white text-center max-w-md"
-            >
-              <div className="flex justify-center mb-4">
-                <Image
-                  src={friendImages[friend.id]}
-                  alt={friend.name}
-                  width={160}
-                  height={220}
-                  className="rounded-md"
-                />
-              </div>
-              <p className="text-lg italic">"{friend.hint}"</p>
-            </div>
-          ))}
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 p-4">
+      <h2 className="text-4xl font-black text-white mb-6">
+        FINAL LOCK
+      </h2>
+
+      <div className="w-full max-w-xl mb-8 space-y-3">
+        {hints.map((hint, i) => (
+          <div
+            key={i}
+            className="bg-gray-800 border-2 border-yellow-500 rounded-lg p-3 text-white text-sm"
+          >
+            <span className="font-bold text-yellow-400 mr-2">
+              Hint {i + 1}:
+            </span>
+            {hint}
+          </div>
+        ))}
       </div>
 
-      {/* Code inputs */}
-      <div className="flex gap-4 mb-8">
-        {[0, 1, 2].map((index) => (
+      <div className="flex gap-4 mb-10">
+        {expectedCode.map((_, i) => (
           <input
-            key={index}
-            type="text"
+            key={i}
+            value={input[i]}
             maxLength={1}
-            value={gameState.finalCode[index]}
-            onChange={(e) => updateFinalCode(index, e.target.value)}
-            className={`w-20 h-20 text-4xl text-center bg-black border-4 rounded-lg font-bold uppercase focus:outline-none focus:ring-4
-              ${
-                gameState.finalCode[index].toUpperCase() ===
-                CORRECT_FINAL_CODE[index]
-                  ? "border-green-500"
-                  : "border-yellow-500"
-              }
+            onChange={e => updateChar(i, e.target.value)}
+            className={`
+              w-20 h-20 text-4xl text-center font-black uppercase
+              bg-black text-white border-4 rounded-lg
+              ${error ? 'border-red-500 animate-shake' : 'border-yellow-500'}
             `}
           />
         ))}
       </div>
 
-      {/* Unlock button */}
       <button
-        onClick={handleSubmit}
-        disabled={!gameState.finalCode.every((c) => c.length === 1)}
-        className="px-8 py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-xl font-bold rounded-lg transition-all transform hover:scale-105"
+        onClick={submit}
+        disabled={!input.every(c => c.length === 1)}
+        className="
+          px-10 py-4
+          bg-green-600 hover:bg-green-700
+          disabled:bg-gray-600
+          text-white text-2xl font-black
+          rounded-lg transition-all
+        "
       >
-        Unlock!
+        UNLOCK
       </button>
     </div>
   );

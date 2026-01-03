@@ -1,14 +1,10 @@
 'use client';
 import React, { useState, useEffect, createContext, useContext } from 'react';
-import { Lock, Heart, Grid3x3, Compass } from 'lucide-react';
-import PuzzleScreen from './puzzle/layout';
+import MazePuzzle from './puzzle/maze/page';
+import  GameState  from '../types/game';
+import HeartsPuzzle from './puzzle/hearts/page';
+import PhotoDifferencePuzzle from './puzzle/difference/page';
 import FinalLockScreen from './final_lock/page';
-import SuccessScreen from './success/page';
-import PersonalizeModal from '../components/personalise_modal/page';
-import { PuzzleConfig } from '../types/puzzle';
-import { GameState } from '../types/game';
-import { Friend } from '../types/friend';
-import Image from "next/image";
 export const GameContext = createContext<{
   gameState: GameState;
   setGameState: React.Dispatch<React.SetStateAction<GameState>>;
@@ -17,27 +13,214 @@ export const GameContext = createContext<{
   updateFinalCode: (index: number, char: string) => void;
 } | null>(null);
 
+
 export const useGame = () => {
   const context = useContext(GameContext);
   if (!context) throw new Error('useGame must be used within GameProvider');
   return context;
 };
 
-export default function EscapeRoomGame() {
+ 
+  
+interface GameContextType { 
+    gameState: GameState;
+    completePuzzle: (puzzleId: number) => void;
+    unlockHint: (puzzleId: number) => void;
+}
+type SceneType = 'image' | 'game';
+
+interface Scene {
+  id: number;
+  type: SceneType;
+  image?: string;
+  gameId?: number;
+}
+const SCENES: Scene[] = [
+  { id: 1, type: 'image', image: '/prisonimage.png' },
+  { id: 2, type: 'image', image: '/scene2.png' },
+  { id: 3, type: 'game', gameId: 1 },
+  { id: 4, type: 'image', image: '/scene4.png' },
+  {id: 5, type: 'image', image: '/scene5.png' },
+  { id: 6, type: 'game', gameId: 2 },
+  { id: 7, type: 'image', image: '/scene7.png' },
+  {id:8, type:'image', image:'/scene8.png'},
+  { id: 9, type: 'game', gameId: 3 },
+  { id: 10, type: 'image', image: '/scene10.png' },
+  { id: 9, type: 'image', image: '/scene11.png' },
+  { id: 10, type: 'game', gameId: 99 }, 
+  { id: 11, type: 'image', image: '/scene13.png' },
+];
+
+function GameFlow() {
+  const [sceneIndex, setSceneIndex] = useState(0);
+
+  const nextScene = () => {
+    setSceneIndex(prev => Math.min(prev + 1, SCENES.length - 1));
+  };
+
+  const restartGame = () => {
+    setSceneIndex(0);
+  };
+
+  const scene = SCENES[sceneIndex];
+  if (sceneIndex === SCENES.length - 1 && scene.type === 'image') {
+    return (
+      <ImageScene
+        src={scene.image!}
+        onNext={restartGame}   
+      />
+    );
+  }
+
+  if (scene.type === 'image') {
+    return (
+      <ImageScene
+        src={scene.image!}
+        onNext={nextScene}
+      />
+    );
+  }
+
+  return (
+    <GameScene
+      gameId={scene.gameId!}
+      onComplete={nextScene}
+    />
+  );
+}
+
+
+function ImageScene({
+  src,
+  onNext,
+}: {
+  src: string;
+  onNext: () => void;
+}) {
+  return (
+    <div
+      className="
+        fixed inset-0
+        w-screen h-screen
+        bg-black
+        flex items-center justify-center
+        touch-manipulation
+      "
+      onClick={onNext}
+    >
+      <img
+        src={src}
+        alt="Prison Break Mission"
+        className="
+          w-full h-full
+          object-fill
+          max-w-none
+          select-none
+          pointer-events-none
+        "
+        style={{
+          paddingTop: 'env(safe-area-inset-top)',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+        }}
+      />
+    </div>
+  );
+}
+function GameScene({
+  gameId,
+  onComplete,
+}: {
+  gameId: number;
+  onComplete: () => void;
+}) {
+  const handleGameWin = () => {
+    setTimeout(onComplete, 800); 
+  };
+
+  if (gameId === 1) return <MiniGameOne onWin={handleGameWin} />;
+  if (gameId === 2) return <MiniGameTwo onWin={handleGameWin} />;
+  if (gameId === 3) return <MiniGameThree onWin={handleGameWin} />;
+  if (gameId === 99) return <FinalLockGame onWin={handleGameWin} />;
+
+  return null;
+}
+function MiniGameOne({ onWin }: { onWin: () => void }) {
+  return (
+    <PhotoDifferencePuzzle
+      puzzleId={1}
+      onComplete={onWin}
+    />
+  );
+}
+
+function MiniGameTwo({ onWin }: { onWin: () => void }) {
+    return( <MazePuzzle 
+    puzzleId={2} 
+    onComplete={onWin} 
+    />);
+}
+
+function MiniGameThree({ onWin }: { onWin: () => void }) {
+  return (
+    <HeartsPuzzle
+      puzzleId={3}
+      onComplete={onWin}
+    />
+  );
+}
+const getFinalCodeFromHints = (friends: GameState['friends']) => {
+  return friends.map(friend =>
+    friend.hint.trim().charAt(0).toUpperCase()
+  );
+};
+
+function FinalLockGame({ onWin }: { onWin: () => void }) {
+  const { gameState } = useGame();
+
+  const finalCode = getFinalCodeFromHints(gameState.friends);
+  const hints = gameState.friends.map(f => f.hint);
+
+  return (
+    <FinalLockScreen
+      expectedCode={finalCode}
+      hints={hints}
+      onComplete={onWin}
+    />
+  );
+}
+
+
+export default function GamePage() {
   const [gameState, setGameState] = useState<GameState>({
     friends: [
-      {id: 1, name: "Cookie Lover", image: "/friend1.png",  hint: "First character of city where you first met",freed: false,},
-      { id: 2, name: 'F.R.I.E.N.D', image: "/friend2.png", hint: 'First character of city where you first ate ice-cream', freed: false },
-      { id: 3, name: 'Grumpy Guy', image:"/friend3.png", hint: 'First character of city where you first stayed overnight', freed: false },
+      {
+        id: 1,
+        name: "Alex",
+        image: "/friend1.png",
+        hint: "First character of city where you first met",
+        freed: true,
+      },
+      {
+        id: 2,
+        name: "Sarah",
+        image: "/friend2.png",
+        hint: "First character of city where you first ate ice-cream",
+        freed: true,
+      },
+      {
+        id: 3,
+        name: "Josh",
+        image: "/friend3.png",
+        hint: "First character of city where you first stayed overnight",
+        freed: true,
+      },
     ],
     currentPuzzle: null,
     completedPuzzles: [],
     finalCode: ['', '', ''],
-    gameStarted: false,
+    gameStarted: true,
     gameCompleted: false,
   });
-
-  const [showPersonalize, setShowPersonalize] = useState(false);
 
   const startPuzzle = (id: number) => {
     setGameState(prev => ({ ...prev, currentPuzzle: id }));
@@ -46,393 +229,22 @@ export default function EscapeRoomGame() {
   const completePuzzle = (id: number) => {
     setGameState(prev => ({
       ...prev,
-      currentPuzzle: null,
       completedPuzzles: [...prev.completedPuzzles, id],
-      friends: prev.friends.map(f => f.id === id ? { ...f, freed: true } : f),
+      currentPuzzle: null,
     }));
   };
 
   const updateFinalCode = (index: number, char: string) => {
     setGameState(prev => {
       const newCode = [...prev.finalCode];
-      newCode[index] = char.toUpperCase();
+      newCode[index] = char;
       return { ...prev, finalCode: newCode };
     });
   };
 
-  const [showIntro, setShowIntro] = useState(false);
-
-  const startGame = () => {
-    setShowIntro(true);
-    setTimeout(() => {
-      setGameState(prev => ({ ...prev, gameStarted: true }));
-      setShowIntro(false);
-    }, 5000);
-  };
-
   return (
     <GameContext.Provider value={{ gameState, setGameState, startPuzzle, completePuzzle, updateFinalCode }}>
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
-        {showIntro ? (
-          <IntroScene />
-        ) : !gameState.gameStarted ? (
-          <LandingScreen onStart={startGame} onPersonalize={() => setShowPersonalize(true)} />
-        ) : gameState.gameCompleted ? (
-          <SuccessScreen />
-        ) : gameState.currentPuzzle ? (
-          <PuzzleScreen puzzleId={gameState.currentPuzzle} />
-        ) : gameState.completedPuzzles.length === 3 ? (
-          <FinalLockScreen />
-        ) : (
-          <JailScene />
-        )}
-        
-        {showPersonalize && (
-          <PersonalizeModal onClose={() => setShowPersonalize(false)} />
-        )}
-      </div>
+      <GameFlow />
     </GameContext.Provider>
-  );
-}
-
-
-function IntroScene() {
-  const { gameState } = useGame();
-  
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-yellow-100 via-orange-100 to-red-100">
-      <div className="relative mb-12 animate-pulse">
-        <h1 className="text-6xl md:text-7xl font-black text-red-600 transform -rotate-2" style={{
-          textShadow: '4px 4px 0px #000, 8px 8px 0px rgba(0,0,0,0.2)',
-          fontFamily: 'Impact, sans-serif',
-          letterSpacing: '0.1em'
-        }}>
-          PRISON BREAK!
-        </h1>
-        <div className="absolute -top-8 -right-8 bg-yellow-400 text-black text-2xl font-bold px-4 py-2 rotate-12 border-4 border-black">
-          OH NO!
-        </div>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl">
-        {gameState.friends.map((friend, index) => (
-          <div key={friend.id} className="flex flex-col items-center">
-            <div className="bg-white border-8 border-black rounded-lg p-4 shadow-2xl transform hover:rotate-1 transition-all">
-              <div className="bg-black text-white text-center font-bold py-1 mb-3 text-xl">
-                CELL #{index + 1}
-              </div>
-              <div className="relative bg-gray-700 rounded-lg overflow-hidden" style={{ aspectRatio: '3/4' }}>
-                <div className="absolute inset-0">
-                  <img 
-                    src={friend.image} 
-                    alt={friend.name}
-                    className="w-full h-full object-cover"
-                    style={{ 
-                      filter: 'contrast(1.2) saturate(1.3)',
-                      imageRendering: 'crisp-edges'
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black opacity-30"></div>
-                </div>
-                <svg viewBox="0 0 300 400" className="absolute inset-0 w-full h-full z-10 pointer-events-none">
-                  <rect x="0" y="10" width="300" height="12" fill="#1f2937" stroke="#000" strokeWidth="2" />
-                  <rect x="0" y="378" width="300" height="12" fill="#1f2937" stroke="#000" strokeWidth="2" />
-                  {[0, 1, 2, 3, 4, 5, 6, 7].map(i => (
-                    <rect key={i} x={i * 37 + 10} y="22" width="10" height="356" fill="#1f2937" stroke="#000" strokeWidth="2" />
-                  ))}
-                  <g transform="translate(135, 180)">
-                    <rect x="0" y="0" width="30" height="40" rx="5" fill="#fbbf24" stroke="#000" strokeWidth="3" />
-                    <circle cx="15" cy="18" r="8" fill="#f59e0b" stroke="#000" strokeWidth="2" />
-                    <rect x="12" y="18" width="6" height="18" fill="#f59e0b" stroke="#000" strokeWidth="2" />
-                  </g>
-                </svg>
-            
-                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20">
-                  <div className="bg-white text-black px-3 py-1 rounded-full font-bold text-sm border-3 border-black">
-                    {friend.name}
-                  </div>
-                </div>
-              </div>
-              <div className="relative mt-4 bg-white border-4 border-black rounded-2xl p-3 text-center">
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-8 border-r-8 border-b-8 border-transparent border-b-black"></div>
-                <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-6 border-r-6 border-b-6 border-transparent border-b-white"></div>
-                <p className="font-bold text-lg text-red-700">HELP!</p>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="mt-12 space-y-4">
-        <div className="bg-red-500 text-white text-3xl font-black px-8 py-4 border-4 border-black transform -rotate-1 shadow-lg animate-pulse">
-          YOUR MISSION: FREE THEM ALL!
-        </div>
-        <div className="text-center">
-          <div className="inline-block bg-yellow-300 text-black text-xl font-bold px-6 py-2 border-3 border-black transform rotate-1">
-            Starting first puzzle...
-          </div>
-        </div>
-      </div>
-
-      <div className="flex gap-2 mt-6">
-        {[0, 1, 2].map(i => (
-          <div
-            key={i}
-            className="w-4 h-4 bg-black rounded-full animate-bounce"
-            style={{ animationDelay: `${i * 0.5}s` }}
-          ></div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function LandingScreen({ onStart, onPersonalize }: { onStart: () => void; onPersonalize: () => void }) {
-  return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-yellow-100 via-orange-100 to-red-100">
-      <div className="text-center space-y-8 max-w-2xl">
-        <div className="space-y-6">
-
-          <div className="relative">
-            <h1 className="text-7xl md:text-8xl font-black text-red-600 transform -rotate-2 mb-4" style={{
-              textShadow: '5px 5px 0px #000, 10px 10px 0px rgba(0,0,0,0.2)',
-              fontFamily: 'Impact, sans-serif',
-              letterSpacing: '0.1em'
-            }}>
-              PRISON BREAK
-            </h1>
-            <div className="absolute -top-4 -right-4 w-24 h-24">
-              <svg viewBox="0 0 100 100" className="w-full h-full animate-spin" style={{ animationDuration: '20s' }}>
-                <polygon points="50,0 61,35 98,35 68,57 79,91 50,70 21,91 32,57 2,35 39,35" fill="#fbbf24" stroke="#000" strokeWidth="3" />
-              </svg>
-            </div>
-          </div>
-          <div className="bg-white border-8 border-black rounded-lg p-6 shadow-2xl transform hover:rotate-1 transition-all">
-            <Lock className="w-32 h-32 mx-auto text-yellow-400 animate-bounce mb-4" style={{
-              filter: 'drop-shadow(3px 3px 0px #000)'
-            }} />
-            <p className="text-2xl font-bold text-black mb-2" style={{ fontFamily: 'Impact, sans-serif' }}>
-              YOUR FRIENDS ARE TRAPPED!
-            </p>
-            <p className="text-lg text-gray-700 font-semibold">
-              Solve puzzles to set them free!
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button
-            onClick={onStart}
-            className="px-8 py-4 bg-green-500 hover:bg-green-600 text-black text-2xl font-black rounded-lg transition-all transform hover:scale-110 hover:rotate-2 border-4 border-black shadow-lg"
-            style={{ 
-              fontFamily: 'Impact, sans-serif',
-              textShadow: '2px 2px 0px rgba(255,255,255,0.5)'
-            }}
-          >
-            START MISSION! 🚀
-          </button>
-          <button
-            onClick={onPersonalize}
-            className="px-8 py-4 bg-purple-500 hover:bg-purple-600 text-white text-2xl font-black rounded-lg transition-all transform hover:scale-110 hover:-rotate-2 border-4 border-black shadow-lg"
-            style={{ fontFamily: 'Impact, sans-serif' }}
-          >
-            CUSTOMIZE ✏️
-          </button>
-        </div>
-        <div className="relative bg-white border-4 border-black rounded-3xl p-4 inline-block mt-8">
-          <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-8 border-r-8 border-t-8 border-transparent border-t-black"></div>
-          <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-6 border-r-6 border-t-6 border-transparent border-t-white"></div>
-          <p className="font-bold text-lg text-black">Ready to become a hero? 💪</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function JailScene() {
-  const { gameState, startPuzzle } = useGame();
-  const [currentCell, setCurrentCell] = useState(0);
-  
-  const puzzles: PuzzleConfig[] = [
-    { id: 1, name: 'Find the Difference', icon: <Grid3x3 className="w-8 h-8" />, color: 'from-blue-600 to-blue-800' },
-    { id: 2, name: 'Solve the Maze', icon: <Compass className="w-8 h-8" />, color: 'from-green-600 to-green-800' },
-    { id: 3, name: 'Spot the Hearts', icon: <Heart className="w-8 h-8" />, color: 'from-red-600 to-red-800' },
-  ];
-
-  const currentFriend = gameState.friends[currentCell];
-  const currentPuzzle = puzzles[currentCell];
-
-  const handleNext = () => {
-    if (currentCell < 2) {
-      setCurrentCell(prev => prev + 1);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentCell > 0) {
-      setCurrentCell(prev => prev - 1);
-    }
-  };
-
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-yellow-100 via-orange-100 to-red-100">
-
-      <div className="mb-8 text-center">
-        <h2 className="text-5xl font-black text-red-600 mb-2" style={{
-          textShadow: '3px 3px 0px #000',
-          fontFamily: 'Impact, sans-serif'
-        }}>
-          FREE YOUR FRIENDS!
-        </h2>
-        <div className="inline-block bg-yellow-300 text-black px-4 py-2 border-3 border-black font-bold text-xl transform -rotate-1">
-          CELL {currentCell + 1} OF 3
-        </div>
-      </div>
-      
-      <div className="relative max-w-2xl w-full">
-        <div className="bg-white border-8 border-black rounded-lg p-6 shadow-2xl">
-          <div className="relative bg-gray-700 rounded-lg overflow-hidden shadow-inner" style={{ aspectRatio: '4/3' }}>
-            <svg viewBox="0 0 400 300" className="absolute inset-0 w-full h-full z-10 pointer-events-none">
-              <rect x="0" y="10" width="400" height="15" fill="#1f2937" stroke="#000" strokeWidth="2" />
-              <rect x="0" y="275" width="400" height="15" fill="#1f2937" stroke="#000" strokeWidth="2" />
-              {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(i => (
-                <rect key={i} x={i * 36 + 10} y="25" width="12" height="250" fill="#1f2937" stroke="#000" strokeWidth="2" />
-              ))}
-              {!currentFriend.freed && (
-                <g transform="translate(185, 130)">
-                  <rect x="0" y="0" width="30" height="40" rx="5" fill="#fbbf24" stroke="#000" strokeWidth="3" />
-                  <circle cx="15" cy="20" r="8" fill="#f59e0b" stroke="#000" strokeWidth="2" />
-                  <rect x="12" y="20" width="6" height="15" fill="#f59e0b" stroke="#000" strokeWidth="2" />
-                </g>
-              )}
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="absolute inset-0">
-                <img 
-                  src={currentFriend.image} 
-                  alt={currentFriend.name}
-                  className="w-full h-full object-fill"
-                  style={{ 
-                    filter: 'contrast(1.2) saturate(1.3)',
-                    imageRendering: 'crisp-edges'
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black opacity-40"></div>
-              </div>
-              
-            <div className="text-center z-20 absolute bottom-4 sm:bottom-8 scale-90 sm:scale-100">
-                <div
-                    className="
-                    bg-white text-black
-                    px-3 py-1.5 sm:px-4 sm:py-2
-                    rounded-full
-                    border-2 sm:border-3 border-black
-                    font-bold
-                    text-base sm:text-xl
-                    mb-2 sm:mb-3
-                    inline-block
-                    "
-                >
-                    {currentFriend.name}
-                </div>
-                {currentFriend.freed && (
-                    <div
-                    className="
-                        bg-green-400 text-black
-                        text-2xl sm:text-4xl
-                        font-black
-                        px-4 py-2 sm:px-6 sm:py-3
-                        border-3 sm:border-4 border-black
-                        rounded-lg
-                        transform rotate-3
-                        inline-block
-                    "
-                    >
-                    ✓ FREE!
-                    </div>
-                )}
-                {!currentFriend.freed && (
-                    <div
-                    className="
-                        relative
-                        bg-white
-                        border-3 sm:border-4 border-black
-                        rounded-xl sm:rounded-2xl
-                        p-2 sm:p-3
-                        inline-block
-                    "
-                    >
-
-                    <div className="absolute -top-2 sm:-top-3 left-1/2 -translate-x-1/2 w-0 h-0
-                        border-l-6 sm:border-l-8
-                        border-r-6 sm:border-r-8
-                        border-b-6 sm:border-b-8
-                        border-transparent border-b-black
-                    " />
-                    <div className="absolute -top-1.5 sm:-top-2 left-1/2 -translate-x-1/2 w-0 h-0
-                        border-l-5 sm:border-l-6
-                        border-r-5 sm:border-r-6
-                        border-b-5 sm:border-b-6
-                        border-transparent border-b-white
-                    " />
-
-                    <p className="font-bold text-sm sm:text-lg text-red-600">
-                        HELP ME!
-                    </p>
-                    </div>
-                )}
-                </div>
-                            </div>
-                            </div>
-                        </div>
-                        {!currentFriend.freed && (
-                        <div className="mt-8 text-center">
-                            <button
-                            onClick={() => startPuzzle(currentFriend.id)}
-                            className={`px-8 py-4 bg-gradient-to-r ${currentPuzzle.color} text-white text-2xl font-black rounded-lg transition-all transform hover:scale-110 hover:rotate-2 shadow-lg flex items-center justify-center gap-3 mx-auto border-4 border-black`}
-                            style={{ fontFamily: 'Impact, sans-serif' }}
-                            >
-                            {currentPuzzle.icon}
-                            <span>SOLVE: {currentPuzzle.name.toUpperCase()}!</span>
-                            </button>
-                        </div>
-                        )}
-                    </div>
-      <div className="flex gap-4 mt-8">
-        <button
-          onClick={handlePrevious}
-          disabled={currentCell === 0}
-          className="px-6 py-3 bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed text-black font-black rounded-lg transition-all transform hover:scale-105 border-4 border-black flex items-center gap-2"
-          style={{ fontFamily: 'Impact, sans-serif' }}
-        >
-          <span>←</span> PREVIOUS
-        </button>
-        <button
-          onClick={handleNext}
-          disabled={currentCell === 2}
-          className="px-6 py-3 bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed text-black font-black rounded-lg transition-all transform hover:scale-105 border-4 border-black flex items-center gap-2"
-          style={{ fontFamily: 'Impact, sans-serif' }}
-        >
-          NEXT <span>→</span>
-        </button>
-      </div>
-      <div className="mt-8 flex gap-4">
-        {gameState.friends.map((friend, index) => (
-          <div
-            key={friend.id}
-            className={`w-6 h-6 rounded-full transition-all border-3 border-black ${
-              index === currentCell 
-                ? 'bg-yellow-400 scale-125 animate-pulse' 
-                : friend.freed 
-                  ? 'bg-green-400' 
-                  : 'bg-red-500'
-            }`}
-          />
-        ))}
-      </div>
-
-      <div className="mt-4">
-        <div className="inline-block bg-white border-3 border-black px-4 py-2 rounded-lg font-bold text-lg text-amber-300">
-          FREED: {gameState.completedPuzzles.length} / 3
-        </div>
-      </div>
-    </div>
   );
 }

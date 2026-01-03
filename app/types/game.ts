@@ -1,4 +1,4 @@
-import { Friend } from './friend';
+import Friend  from './friend';
 interface GameState {
   friends: Friend[];
   currentPuzzle: number | null;
@@ -7,4 +7,4 @@ interface GameState {
   gameStarted: boolean;
   gameCompleted: boolean;
 }
-export type { GameState };
+export default  GameState ;

@@ -1,7 +1,5 @@
 interface PuzzleConfig {
-  id: number;
-  name: string;
-  icon: React.ReactNode;
-  color: string;
+  puzzleId: number;
+  onComplete: () => void;
 }
-export type { PuzzleConfig };
+export default PuzzleConfig ;

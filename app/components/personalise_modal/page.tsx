@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useGame } from '../../game/page';
+import { useGame } from '../../game/page.tx';
 function PersonalizeModal({ onClose }: { onClose: () => void }) {
   const { gameState, setGameState } = useGame();
   const [localFriends, setLocalFriends] = useState(gameState.friends);

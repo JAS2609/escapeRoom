@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import PuzzleHeader from '../../../components/puzzleheader/page';
-import { useGame } from '../../page';
-function HeartsPuzzle({ puzzleId }: { puzzleId: number }) {
-  const { completePuzzle } = useGame();
+import puzzleConfig from '../../../types/puzzle'
+
+function HeartsPuzzle({ puzzleId, onComplete }:puzzleConfig) {
   const [found, setFound] = useState<number[]>([]);
   const [hintUnlocked, setHintUnlocked] = useState(false);
   const [timeElapsed, setTimeElapsed] = useState(0);
@@ -25,11 +25,10 @@ function HeartsPuzzle({ puzzleId }: { puzzleId: number }) {
       const newFound = [...found, index];
       setFound(newFound);
       if (newFound.length === 5) {
-        setTimeout(() => completePuzzle(puzzleId), 500);
+       setTimeout(onComplete, 600);
       }
     }
   };
-
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4">
       <PuzzleHeader 

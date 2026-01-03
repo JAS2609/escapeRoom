@@ -1,5 +1,3 @@
-
-
 interface Friend {
   id: number;
   name: string;
@@ -7,4 +5,4 @@ interface Friend {
   hint: string;
   freed: boolean;
 }
-export type { Friend };
+export default Friend ;

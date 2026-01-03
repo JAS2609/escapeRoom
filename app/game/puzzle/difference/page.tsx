@@ -1,14 +1,20 @@
 import React, { useState } from 'react';
 import PuzzleHeader from '../../../components/puzzleheader/page';
-import { useGame } from '../../page';
 
-function PhotoDifferencePuzzle({ puzzleId }: { puzzleId: number }) {
-  const { completePuzzle } = useGame();
+interface PhotoDifferencePuzzleProps {
+  puzzleId: number;
+  onComplete: () => void;
+}
+
+function PhotoDifferencePuzzle({
+  puzzleId,
+  onComplete,
+}: PhotoDifferencePuzzleProps) {
   const [found, setFound] = useState<number[]>([]);
   const [mistakes, setMistakes] = useState(0);
   const [flashError, setFlashError] = useState(false);
 
-  const DEBUG_ZONES = false; // 👈 set true while tuning positions
+  const DEBUG_ZONES = false;
 
   const differences = [
     { id: 1, label: 'Wine color', top: '63%', left: '32%', size: '6%' },
@@ -24,7 +30,9 @@ function PhotoDifferencePuzzle({ puzzleId }: { puzzleId: number }) {
     setFound(updated);
 
     if (updated.length === differences.length) {
-      setTimeout(() => completePuzzle(puzzleId), 700);
+      setTimeout(() => {
+        onComplete(); 
+      }, 700);
     }
   };
 
@@ -49,8 +57,6 @@ function PhotoDifferencePuzzle({ puzzleId }: { puzzleId: number }) {
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 w-full max-w-6xl">
-
-        {/* IMAGE 1 */}
         <div className="relative">
           <img
             src="/diffimg2.png"
@@ -58,8 +64,6 @@ function PhotoDifferencePuzzle({ puzzleId }: { puzzleId: number }) {
             className="rounded-lg shadow-lg w-full"
           />
         </div>
-
-        {/* IMAGE 2 (Clickable) */}
         <div
           className={`relative rounded-lg overflow-hidden
             ${flashError ? 'ring-4 ring-red-500' : ''}
@@ -72,7 +76,6 @@ function PhotoDifferencePuzzle({ puzzleId }: { puzzleId: number }) {
             className="rounded-lg shadow-lg w-full"
           />
 
-          {/* Difference hit zones */}
           {differences.map(diff => {
             const isFound = found.includes(diff.id);
 
@@ -85,11 +88,13 @@ function PhotoDifferencePuzzle({ puzzleId }: { puzzleId: number }) {
                   handleCorrect(diff.id);
                 }}
                 className={`absolute rounded-full transition-all
-                  ${isFound
-                    ? 'bg-yellow-400/40 ring-4 ring-yellow-400'
-                    : DEBUG_ZONES
+                  ${
+                    isFound
+                      ? 'bg-yellow-400/40 ring-4 ring-yellow-400'
+                      : DEBUG_ZONES
                       ? 'bg-red-500/30 border border-red-600'
-                      : 'bg-transparent'}
+                      : 'bg-transparent'
+                  }
                 `}
                 style={{
                   top: diff.top,
