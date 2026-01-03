@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import PuzzleHeader from '../../../components/puzzleheader/page';
+import PuzzleHeader from '../../../../components/puzzleheader/page';
 
 interface MazePuzzleProps {
   puzzleId: number;
