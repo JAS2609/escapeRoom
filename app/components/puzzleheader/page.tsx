@@ -1,3 +1,4 @@
+'use client'; 
 import React, { useState } from 'react';
 import { Lightbulb } from 'lucide-react';
 function PuzzleHeader({ title, found, total, hintUnlocked, hint }: { 
