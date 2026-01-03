@@ -1,10 +1,10 @@
 'use client';
 import React, { useState, useEffect, createContext, useContext } from 'react';
-import MazePuzzle from './puzzle/maze/page';
+import MazePuzzle from './puzzle/maze/maze';
 import  GameState  from '../types/game';
-import HeartsPuzzle from './puzzle/hearts/page';
-import PhotoDifferencePuzzle from './puzzle/difference/page';
-import FinalLockScreen from './final_lock/page';
+import HeartsPuzzle from './puzzle/hearts/hearts';
+import PhotoDifferencePuzzle from './puzzle/difference/diffrence';
+import FinalLockScreen from './final_lock/finalLock';
 export const GameContext = createContext<{
   gameState: GameState;
   setGameState: React.Dispatch<React.SetStateAction<GameState>>;

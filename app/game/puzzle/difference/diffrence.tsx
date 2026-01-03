@@ -57,58 +57,65 @@ function PhotoDifferencePuzzle({
         Mistakes: {mistakes}
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 w-full max-w-6xl">
-        <div className="relative">
-          <img
-            src="/diffimg2.png"
-            alt="Original"
-            className="rounded-lg shadow-lg w-full"
-          />
-        </div>
-        <div
-          className={`relative rounded-lg overflow-hidden
-            ${flashError ? 'ring-4 ring-red-500' : ''}
-          `}
-          onClick={handleMiss}
-        >
-          <img
-            src="/diffimg1.png"
-            alt="Modified"
-            className="rounded-lg shadow-lg w-full"
-          />
+      <div className="w-full flex-1 flex items-center justify-center mt-4">
+  <div className="grid grid-cols-2 gap-3 w-full max-w-6xl aspect-[2/1]">
+    
+    {/* IMAGE 1 */}
+    <div className="relative h-full">
+      <img
+        src="/diffimg2.png"
+        alt="Original"
+        className="w-full h-full object-contain rounded-lg shadow-lg"
+      />
+    </div>
 
-          {differences.map(diff => {
-            const isFound = found.includes(diff.id);
+    {/* IMAGE 2 (Clickable) */}
+    <div
+      className={`relative h-full rounded-lg overflow-hidden
+        ${flashError ? 'ring-4 ring-red-500' : ''}
+      `}
+      onClick={handleMiss}
+    >
+      <img
+        src="/diffimg1.png"
+        alt="Modified"
+        className="w-full h-full object-contain rounded-lg shadow-lg"
+      />
 
-            return (
-              <button
-                key={diff.id}
-                aria-label={diff.label}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleCorrect(diff.id);
-                }}
-                className={`absolute rounded-full transition-all
-                  ${
-                    isFound
-                      ? 'bg-yellow-400/40 ring-4 ring-yellow-400'
-                      : DEBUG_ZONES
-                      ? 'bg-red-500/30 border border-red-600'
-                      : 'bg-transparent'
-                  }
-                `}
-                style={{
-                  top: diff.top,
-                  left: diff.left,
-                  width: diff.size,
-                  height: diff.size,
-                  transform: 'translate(-50%, -50%)',
-                }}
-              />
-            );
-          })}
-        </div>
-      </div>
+      {differences.map(diff => {
+        const isFound = found.includes(diff.id);
+
+        return (
+          <button
+            key={diff.id}
+            aria-label={diff.label}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCorrect(diff.id);
+            }}
+            className={`absolute rounded-full transition-all
+              ${
+                isFound
+                  ? 'bg-yellow-400/40 ring-4 ring-yellow-400'
+                  : DEBUG_ZONES
+                  ? 'bg-red-500/30 border border-red-600'
+                  : 'bg-transparent'
+              }
+            `}
+            style={{
+              top: diff.top,
+              left: diff.left,
+              width: diff.size,
+              height: diff.size,
+              transform: 'translate(-50%, -50%)',
+            }}
+          />
+        );
+      })}
+    </div>
+  </div>
+</div>
+
     </div>
   );
 }
